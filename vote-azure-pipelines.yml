@@ -55,8 +55,6 @@ stages:
   jobs:
   - job: Push
     displayName: Push
-    dependsOn: DockerLogin
-    condition: succeeded()
     steps:
     - task: Docker@2
       displayName: Push Docker image
