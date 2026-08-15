@@ -25,14 +25,15 @@ stages:
 
 - stage: Test
   jobs:
+
   - job: Test
     steps:
+
     - bash: |
         echo "Agent is working"
         whoami
         hostname
         docker --version
-        echo "Docker is working"
       displayName: Test self-hosted agent
 
 - stage: Build
@@ -53,8 +54,19 @@ stages:
 - stage: Push
   displayName: Push image
   jobs:
+  - job: DockerLogin
+    displayName: DockerLogin
+    steps:
+      - bash: |
+          echo "$(DOCKER_PASS)" | docker login "$(DOCKER_URL)" \
+            -u "$(DOCKER_USERNAME)" \
+            --password-stdin
+        displayName: Login Docker
+
   - job: Push
     displayName: Push
+    dependsOn: DockerLogin
+    condition: succeeded()
     steps:
     - task: Docker@2
       displayName: Push Docker image
