@@ -1,0 +1,68 @@
+trigger:
+ paths:
+   include:
+     - vote/*
+
+resources:
+- repo: self
+
+variables:
+- group: dockerhub-cred
+
+- name: imageRepository
+  value: 'voteapp'
+
+- name: dockerfilePath
+  value: '$(Build.SourcesDirectory)/app/example-voting-app/vote/Dockerfile'
+
+- name: tag
+  value: '$(Build.BuildId)'
+
+pool: 
+ name: azure-voting
+
+stages:
+
+- stage: Test
+  jobs:
+  - job: Test
+    steps:
+    - bash: |
+        echo "Agent is working"
+        whoami
+        hostname
+        docker --version
+        echo "Docker is working"
+      displayName: Test self-hosted agent
+
+- stage: Build
+  displayName: Build image
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+      - task: Docker@2
+        displayName: Build Docker image
+        inputs:
+          command: build
+          repository: '$(DOCKER_USERNAME)/$(imageRepository)'
+          Dockerfile: '$(dockerfilePath)'
+          tags: |
+            $(tag)
+
+- stage: Push
+  displayName: Push image
+  jobs:
+  - job: Push
+    displayName: Push
+    dependsOn: DockerLogin
+    condition: succeeded()
+    steps:
+    - task: Docker@2
+      displayName: Push Docker image
+      inputs:
+        command: push
+        repository: '$(DOCKER_USERNAME)/$(imageRepository)'
+        tags: $(tag)
+
+
